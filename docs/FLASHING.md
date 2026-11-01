@@ -157,3 +157,4 @@ Electricity meter 1.0.0
 | הצריבה הסתיימה אבל הלוח לא עולה, והלוג מראה `invalid header` | הקובץ נכתב לכתובת שגויה. צרוב שוב עם **Flash Address** `0x0` ועם **Erase all** |
 | חלון בחירת היציאה ריק | בדוק לפי סעיף 1. ב-Ubuntu, השתמש ב-Google Chrome ולא ב-Chromium שמותקן מ-Snap |
 | ב-PlatformIO אין כפתורי Build ו-Upload | נפתחה התיקייה הראשית. פתח את `firmware` |
+| ב-VS Code מופיעה השגיאה `#include errors detected` | זו שגיאה של השלמת הקוד ולא של הבנייה. היא נעלמת אחרי ש-PlatformIO מסיים להכין את הפרויקט. ודא שפתחת את `firmware`, חכה שההורדות בפינה הימנית התחתונה יסתיימו, ולחץ **Build** (✓) פעם אחת |
