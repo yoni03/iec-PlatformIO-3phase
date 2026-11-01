@@ -5,6 +5,7 @@ run by hand:  python3 tools/embed_web.py
 """
 import gzip
 import os
+import re
 
 try:
     Import("env")  # noqa: F821  (PlatformIO / SCons)
@@ -14,6 +15,15 @@ except NameError:
 
 SRC = os.path.join(ROOT, "web", "index.html")
 DST = os.path.join(ROOT, "src", "web_ui.h")
+
+
+def embedded(text):
+    """The page stored in an existing web_ui.h, or None."""
+    try:
+        body = text.split("PROGMEM = {", 1)[1]
+        return gzip.decompress(bytes(int(x, 16) for x in re.findall(r"0x([0-9a-f]{2})", body)))
+    except Exception:
+        return None
 
 
 def build():
@@ -31,6 +41,10 @@ def build():
         "const uint8_t INDEX_HTML_GZ[] PROGMEM = {\n" + "\n".join(lines) + "\n};\n"
     )
     old = open(DST).read() if os.path.exists(DST) else ""
+    # gzip output differs between zlib versions: rewrite the header only when
+    # the page itself changed, so builds do not leave a modified file behind
+    if old and embedded(old) == raw:
+        return
     if out != old:
         with open(DST, "w") as f:
             f.write(out)
