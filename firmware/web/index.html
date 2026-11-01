@@ -1,0 +1,951 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>מונה חשמל</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--text:#1d2330;--muted:#6b7385;--line:#e3e6ec;--accent:#2563eb;--accent2:#0ea5e9;
+--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--l1:#ef4444;--l2:#eab308;--l3:#3b82f6;--disc:#10b981;--shadow:0 1px 3px rgba(0,0,0,.08)}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1218;--card:#181c24;--text:#e6e9ef;--muted:#8d95a8;--line:#2a303c;--accent:#60a5fa;--accent2:#38bdf8;--shadow:none}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:10px 16px;flex-wrap:wrap}
+header h1{font-size:18px;margin:0;display:flex;align-items:center;gap:8px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--muted);display:inline-block}
+.dot.ok{background:var(--ok)}.dot.bad{background:var(--bad)}.dot.warn{background:var(--warn)}
+nav{display:flex;gap:4px;margin-inline-start:auto;flex-wrap:wrap}
+nav button{background:none;border:0;color:var(--muted);font:inherit;padding:6px 12px;border-radius:8px;cursor:pointer}
+nav button.on{background:var(--accent);color:#fff}
+main{max-width:1100px;margin:0 auto;padding:16px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow);margin-bottom:12px}
+.grid .card{margin:0}
+.card h2{font-size:15px;margin:0 0 10px;color:var(--muted);font-weight:600}
+.big{font-size:44px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.big small{font-size:18px;color:var(--muted);font-weight:500}
+.val{font-size:24px;font-weight:650;font-variant-numeric:tabular-nums}
+.val small{font-size:14px;color:var(--muted);font-weight:500}
+.sub{color:var(--muted);font-size:13px}
+.num{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
+.phase{border-top:4px solid var(--muted)}
+.phase.p1{border-top-color:var(--l1)}.phase.p2{border-top-color:var(--l2)}.phase.p3{border-top-color:var(--l3)}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:8px}
+.bar>div{height:100%;background:var(--ok);width:0;transition:width .5s}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row.between{justify-content:space-between}
+.chart{position:relative;width:100%;height:260px}
+.chart canvas{width:100%;height:100%;display:block;touch-action:pan-y}
+.tip{position:absolute;pointer-events:none;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.15);white-space:nowrap;display:none;z-index:2}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:12px;height:3px;border-radius:2px;margin-inline-end:5px;vertical-align:middle}
+button.btn,.btn{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:8px 14px;font:inherit;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.danger{background:var(--bad)}
+.btn.small{padding:4px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:default}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:none;border:0;padding:6px 12px;font:inherit;color:var(--text);cursor:pointer;border-inline-start:1px solid var(--line)}
+.seg button:first-child{border-inline-start:0}
+.seg button.on{background:var(--accent);color:#fff}
+input,select{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 10px;max-width:100%}
+input[type=checkbox]{width:18px;height:18px;vertical-align:middle}
+label.f{display:block;margin-bottom:10px}
+label.f>span{display:block;font-size:13px;color:var(--muted);margin-bottom:3px}
+.form{max-width:420px}
+.form input:not([type=checkbox]),.form select{width:100%}
+.center{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.center .card{width:100%;max-width:400px}
+.msg{padding:8px 12px;border-radius:8px;margin:8px 0;font-size:14px;display:none}
+.msg.err{background:#fee2e2;color:#991b1b;display:block}.msg.ok{background:#dcfce7;color:#166534;display:block}
+.banner{background:var(--warn);color:#fff;padding:8px 16px;text-align:center;font-size:14px;display:none}
+.banner.demo{background:#7c3aed}
+table{border-collapse:collapse;width:100%;font-size:14px}
+td,th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:start}
+th{color:var(--muted);font-weight:600}
+.rules td{padding:6px 4px}
+.days label{display:inline-flex;flex-direction:column;align-items:center;font-size:12px;margin-inline-end:2px}
+.hide{display:none!important}
+.muted{color:var(--muted)}
+.up{color:var(--bad)}.down{color:var(--ok)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;font-size:14px}
+.kv div:nth-child(odd){color:var(--muted)}
+@media (max-width:600px){.big{font-size:34px}.val{font-size:20px}header{padding:8px 12px}main{padding:10px}.chart{height:220px}nav button{padding:6px 8px}
+.grid{grid-template-columns:1fr 1fr;gap:8px}.card{padding:10px 12px}#phases{grid-template-columns:repeat(3,1fr)}#phases .val{font-size:17px}#phases .sub{font-size:11px}#phases h2{font-size:13px}
+.grid:not(#phases)>.card:first-child:nth-last-child(odd){grid-column:1/-1}.form .grid,#tSet>.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- ======================= setup ======================= -->
+<div id="vSetup" class="center hide">
+ <div class="card form">
+  <h1 style="margin-top:0">⚡ הגדרה ראשונית</h1>
+  <p class="sub" id="sNote">בחר את רשת ה-Wi-Fi של הבית והגדר שם משתמש וסיסמה לממשק.</p>
+  <div id="sWifi">
+  <label class="f"><span>רשת Wi-Fi</span>
+   <div class="row"><select id="sScanList" style="flex:1"><option value="">סורק רשתות...</option></select>
+   <button class="btn ghost small" type="button" onclick="scan('sScanList','sSsid')">רענון</button></div></label>
+  <label class="f"><span>שם הרשת (SSID)</span><input id="sSsid" autocomplete="off"></label>
+  <label class="f"><span>סיסמת Wi-Fi</span><input id="sWpass" type="password" autocomplete="off"></label>
+  <label class="f"><span>שם המכשיר ברשת</span><input id="sHost" dir="ltr" placeholder="electricity-meter"></label>
+  <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
+  </div>
+  <label class="f"><span>שם משתמש לממשק</span><input id="sUser" value="admin" autocomplete="username"></label>
+  <label class="f"><span>סיסמה (לפחות 8 תווים)</span><input id="sPass" type="password" autocomplete="new-password"></label>
+  <label class="f"><span>אימות סיסמה</span><input id="sPass2" type="password" autocomplete="new-password"></label>
+  <div id="sMsg" class="msg"></div>
+  <button class="btn" id="sBtn" onclick="doSetup()">שמירה וחיבור</button>
+ </div>
+</div>
+
+<!-- ======================= login ======================= -->
+<div id="vLogin" class="center hide">
+ <form class="card form" onsubmit="doLogin();return false">
+  <h1 style="margin-top:0">⚡ מונה חשמל</h1>
+  <label class="f"><span>שם משתמש</span><input id="lUser" autocomplete="username"></label>
+  <label class="f"><span>סיסמה</span><input id="lPass" type="password" autocomplete="current-password"></label>
+  <label class="f"><input type="checkbox" id="lRem" checked> <span style="display:inline">זכור אותי ל-30 יום</span></label>
+  <div id="lMsg" class="msg"></div>
+  <button class="btn" type="submit">כניסה</button>
+ </form>
+</div>
+
+<!-- ======================= app ======================= -->
+<div id="vApp" class="hide">
+<header>
+ <h1><span id="hDot" class="dot"></span> מונה חשמל</h1>
+ <span id="hInfo" class="sub"></span>
+ <nav id="nav">
+  <button data-tab="now" class="on">עכשיו</button>
+  <button data-tab="hist">היסטוריה</button>
+  <button data-tab="cost">עלויות</button>
+  <button data-tab="set">הגדרות</button>
+ </nav>
+</header>
+<div id="bDemo" class="banner demo">מצב הדגמה פעיל: הנתונים מדומים ולא מגיעים מהמונה. אפשר לכבות אותו בהגדרות.</div>
+<div id="bStale" class="banner">אין נתונים מהמונה. בדוק את החיבור לשקע ה-P1.</div>
+<div id="bClock" class="banner">השעון עדיין לא מסונכרן, ולכן ההיסטוריה לא נשמרת כרגע.</div>
+
+<main>
+<!-- ---------- now ---------- -->
+<section id="tNow">
+ <div class="grid">
+  <div class="card">
+   <h2>צריכה עכשיו</h2>
+   <div class="big num" id="nPower">–</div>
+   <div class="sub" id="nPowerSub"></div>
+  </div>
+  <div class="card">
+   <h2>היום</h2>
+   <div class="val num" id="nToday">–</div>
+   <div class="sub" id="nTodaySub"></div>
+  </div>
+  <div class="card">
+   <h2>שיא היום</h2>
+   <div class="val num" id="nPeak">–</div>
+   <div class="sub" id="nPeakSub"></div>
+  </div>
+  <div class="card">
+   <h2>צריכת בסיס (הכי נמוך היום)</h2>
+   <div class="val num" id="nBase">–</div>
+   <div class="sub" id="nBaseSub"></div>
+  </div>
+ </div>
+ <div class="grid" id="phases" style="margin-top:12px"></div>
+ <div class="card" style="margin-top:12px">
+  <div class="row between"><h2>15 הדקות האחרונות</h2>
+   <div class="seg" id="liveMode"><button data-v="total" class="on">סה"כ</button><button data-v="phases">לפי פאזה</button></div></div>
+  <div class="chart"><canvas id="cLive"></canvas><div class="tip"></div></div>
+  <div class="legend" id="liveLegend"></div>
+ </div>
+ <div class="card">
+  <h2>המונה</h2>
+  <div class="kv" id="nMeter"></div>
+ </div>
+</section>
+
+<!-- ---------- history ---------- -->
+<section id="tHist" class="hide">
+ <div class="card">
+  <div class="row between">
+   <div class="seg" id="hRange">
+    <button data-v="day" class="on">יום</button><button data-v="week">שבוע</button><button data-v="month">חודש</button><button data-v="year">שנה</button><button data-v="custom">טווח</button>
+   </div>
+   <div class="row">
+    <button class="btn ghost small" id="hPrev">→ הקודם</button>
+    <span id="hLabel" style="min-width:150px;text-align:center;font-weight:600"></span>
+    <button class="btn ghost small" id="hNext">הבא ←</button>
+   </div>
+  </div>
+  <div class="row hide" id="hCustom" style="margin-top:10px">
+   <label>מ- <input type="date" id="hFrom"></label><label>עד <input type="date" id="hTo"></label>
+   <button class="btn small" onclick="loadHistory()">הצג</button>
+  </div>
+  <div class="row" style="margin-top:10px">
+   <div class="seg" id="hMetric"><button data-v="energy" class="on">צריכה</button><button data-v="power">הספק</button><button data-v="phases">פאזות</button><button data-v="voltage">מתח</button><button data-v="current">זרם</button><button data-v="cost">עלות</button></div>
+  </div>
+ </div>
+ <div class="grid" id="hStats"></div>
+ <div class="card" style="margin-top:12px">
+  <div class="row between"><h2 id="hChartTitle"></h2><a class="btn ghost small" id="hCsv" href="#">⬇ הורדת CSV</a></div>
+  <div class="chart"><canvas id="cHist"></canvas><div class="tip"></div></div>
+  <div class="legend" id="hLegend"></div>
+  <div class="sub" id="hNote"></div>
+ </div>
+</section>
+
+<!-- ---------- costs ---------- -->
+<section id="tCost" class="hide">
+ <div class="grid">
+  <div class="card"><h2>תקופת החיוב הנוכחית</h2><div class="val num" id="cNow">–</div><div class="sub" id="cNowSub"></div></div>
+  <div class="card"><h2>צפי לסוף התקופה</h2><div class="val num" id="cFc">–</div><div class="sub" id="cFcSub"></div></div>
+  <div class="card"><h2>התקופה הקודמת</h2><div class="val num" id="cPrev">–</div><div class="sub" id="cPrevSub"></div></div>
+  <div class="card"><h2>חיסכון מההנחות</h2><div class="val num" id="cSave">–</div><div class="sub" id="cSaveSub"></div></div>
+ </div>
+ <div class="card" style="margin-top:12px">
+  <h2>עלות לפי יום בתקופה הנוכחית</h2>
+  <div class="chart"><canvas id="cDays"></canvas><div class="tip"></div></div>
+ </div>
+ <div class="card">
+  <h2>צריכה ממוצעת לפי שעה ביממה (30 הימים האחרונים)</h2>
+  <div class="chart"><canvas id="cProfile"></canvas><div class="tip"></div></div>
+  <div class="legend"><span><i style="background:var(--accent)"></i>מחיר מלא</span><span><i style="background:var(--disc)"></i>שעות עם הנחה</span></div>
+ </div>
+ <div class="card">
+  <h2>עלות לפי תקופת חיוב</h2>
+  <div class="chart"><canvas id="cMonths"></canvas><div class="tip"></div></div>
+  <div class="sub">העלויות מחושבות לפי המחיר וההנחה שהוגדרו בזמן הצריכה, ולא כוללות תשלום קבוע.</div>
+ </div>
+</section>
+
+<!-- ---------- settings ---------- -->
+<section id="tSet" class="hide">
+ <div class="card form" style="max-width:none">
+  <h2>מחיר ומסלול</h2>
+  <div class="grid">
+   <label class="f"><span>מחיר לקוט"ש כולל מע"מ (₪)</span><input id="gPrice" type="number" step="0.0001" min="0.01" dir="ltr"></label>
+   <label class="f"><span>תשלום קבוע לחודש (₪)</span><input id="gFixed" type="number" step="0.01" min="0" dir="ltr"></label>
+   <label class="f"><span>יום תחילת תקופת החיוב</span><input id="gBill" type="number" min="1" max="28" dir="ltr"></label>
+   <label class="f"><span>חיבור לכל פאזה (אמפר)</span><select id="gBreaker"><option>25</option><option>32</option><option>40</option><option>63</option><option>80</option></select></label>
+  </div>
+  <h2 style="margin-top:8px">הנחות לפי שעות</h2>
+  <p class="sub">הגדר את מסלול ספק החשמל שלך. בכל שעה חלה ההנחה הגבוהה מבין הכללים שמתאימים לה. "עד" לא כולל את השעה עצמה; כלל של 23 עד 7 עובר את חצות. לכל השעות: 0 עד 24.</p>
+  <div style="overflow-x:auto"><table class="rules"><thead><tr><th>פעיל</th><th>הנחה %</th><th>משעה</th><th>עד שעה</th><th>ימים</th></tr></thead><tbody id="gRules"></tbody></table></div>
+  <div class="row" style="margin-top:6px"><span class="sub">תבניות:</span>
+   <button class="btn ghost small" onclick="preset('flat')">הנחה קבועה</button>
+   <button class="btn ghost small" onclick="preset('night')">לילה 23–7</button>
+   <button class="btn ghost small" onclick="preset('day')">יום 7–17 א׳–ה׳</button>
+  </div>
+  <div id="gMsg" class="msg"></div>
+  <button class="btn" style="margin-top:10px" onclick="saveTariff()">שמירה</button>
+  <p class="sub">שינוי המחיר חל מרגע השמירה. העלות של נתונים קודמים נשארת לפי המחיר שהיה אז.</p>
+ </div>
+
+ <div class="grid">
+  <div class="card form">
+   <h2>Wi-Fi</h2>
+   <label class="f"><span>רשת</span><div class="row"><select id="wList" style="flex:1"><option value="">–</option></select>
+    <button class="btn ghost small" type="button" onclick="scan('wList','wSsid')">סריקה</button></div></label>
+   <label class="f"><span>שם הרשת (SSID)</span><input id="wSsid"></label>
+   <label class="f"><span>סיסמה (ריק = ללא שינוי)</span><input id="wPass" type="password" autocomplete="off"></label>
+   <label class="f"><span>שם המכשיר ברשת</span><input id="wHost" dir="ltr"></label>
+   <div id="wMsg" class="msg"></div>
+   <button class="btn" onclick="saveWifi()">שמירה והפעלה מחדש</button>
+  </div>
+  <div class="card form">
+   <h2>חשבון</h2>
+   <label class="f"><span>סיסמה נוכחית</span><input id="aCur" type="password" autocomplete="current-password"></label>
+   <label class="f"><span>שם משתמש</span><input id="aUser" autocomplete="username"></label>
+   <label class="f"><span>סיסמה חדשה (לפחות 8 תווים)</span><input id="aPass" type="password" autocomplete="new-password"></label>
+   <label class="f"><span>אימות סיסמה חדשה</span><input id="aPass2" type="password" autocomplete="new-password"></label>
+   <div id="aMsg" class="msg"></div>
+   <button class="btn" onclick="saveAccount()">עדכון</button>
+  </div>
+ </div>
+
+ <div class="grid" style="margin-top:12px">
+  <div class="card">
+   <h2>מערכת</h2>
+   <div class="kv" id="ySys"></div>
+   <div class="row" style="margin-top:12px">
+    <button class="btn ghost small" onclick="reboot()">הפעלה מחדש</button>
+    <button class="btn ghost small" onclick="logout()">יציאה</button>
+   </div>
+  </div>
+  <div class="card">
+   <h2>עדכון קושחה</h2>
+   <p class="sub">בחר את הקובץ <span class="num">firmware.bin</span> שנבנה ב-PlatformIO. ההיסטוריה וההגדרות נשמרות.</p>
+   <input type="file" id="uFile" accept=".bin">
+   <div class="bar" style="margin:10px 0"><div id="uBar"></div></div>
+   <div id="uMsg" class="msg"></div>
+   <button class="btn" onclick="uploadFw()">עדכון</button>
+  </div>
+  <div class="card">
+   <h2>נתונים</h2>
+   <p class="sub">הורדת כל ההיסטוריה ששמורה במכשיר:</p>
+   <div class="row">
+    <a class="btn ghost small" href="api/export.csv?tier=m">דקות</a>
+    <a class="btn ghost small" href="api/export.csv?tier=h">שעות</a>
+    <a class="btn ghost small" href="api/export.csv?tier=d">ימים</a>
+   </div>
+   <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
+   <label><input type="checkbox" id="yDemo" onchange="setDemo(this.checked)"> מצב הדגמה (נתונים מדומים, לבדיקה בלי מונה)</label>
+   <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
+   <button class="btn danger small" id="yClear" onclick="clearHist()">מחיקת כל ההיסטוריה</button>
+   <div id="yMsg" class="msg"></div>
+  </div>
+ </div>
+</section>
+</main>
+</div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const DAY = 864e5;
+const WD = ['א','ב','ג','ד','ה','ו','ש'];
+const nf = (v, d=0) => Number(v).toLocaleString('he-IL', {minimumFractionDigits:d, maximumFractionDigits:d});
+const kw = w => nf(w/1000, w >= 10000 ? 1 : 2);
+const kwh = wh => nf(wh/1000, wh >= 100000 ? 0 : wh >= 10000 ? 1 : 2);
+const ils = u => '₪' + nf(u/1e6, 2);
+const p2 = n => String(n).padStart(2, '0');
+const U = (v, unit) => `<span class="num">${v}${unit ? ' ' + unit : ''}</span>`;  // keeps number+unit together in RTL text
+const hhmm = t => { const d = new Date(t); return p2(d.getHours()) + ':' + p2(d.getMinutes()); };
+const dmy = t => { const d = new Date(t); return d.getDate() + '.' + (d.getMonth()+1) + '.' + String(d.getFullYear()).slice(2); };
+const dm = t => { const d = new Date(t); return d.getDate() + '.' + (d.getMonth()+1); };
+const MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const startOfDay = t => { const d = new Date(t); d.setHours(0,0,0,0); return d.getTime(); };
+
+let S = {settings:null, live:null, tab:'now', liveMode:'total', recent:[], recentUp:0, timer:null, yday:null, ydayAt:0};
+
+// ------------------------------------------------------------------ API
+class AuthError extends Error {}
+async function api(path, opt={}) {
+  opt.credentials = 'same-origin';
+  opt.headers = Object.assign({'X-Requested-With':'fetch'}, opt.headers || {});
+  const r = await fetch(path, opt);
+  if (r.status === 401 && !path.includes('login')) { showLogin(); throw new AuthError(); }
+  return r;
+}
+async function post(path, data) {
+  const r = await api(path, {method:'POST', body:new URLSearchParams(data)});
+  let j = {}; try { j = await r.json(); } catch (e) {}
+  if (!r.ok) throw Object.assign(new Error(j.error || r.status), {data:j, status:r.status});
+  return j;
+}
+function msg(id, text, ok) { const m = $(id); m.textContent = text; m.className = 'msg ' + (text ? (ok ? 'ok' : 'err') : ''); }
+
+// Binary history: 8 byte header + 52 byte records (see firmware src/records.h)
+async function history(tier, from, to) {
+  const r = await api(`api/history?tier=${tier}&from=${Math.floor(from/1000)}&to=${Math.floor(to/1000)}`);
+  const b = await r.arrayBuffer(), v = new DataView(b), out = [];
+  if (b.byteLength < 8) return out;
+  const size = v.getUint16(6, true);
+  for (let o = 8; o + size <= b.byteLength; o += size) {
+    const u16 = k => v.getUint16(o + k, true);
+    out.push({t:v.getUint32(o, true)*1000, impEnd:v.getUint32(o+4, true), expEnd:v.getUint32(o+8, true),
+      imp:v.getUint32(o+12, true), exp:v.getUint32(o+16, true), cost:v.getUint32(o+20, true),
+      pAvg:u16(24), pMax:u16(26), pMin:u16(28), pl:[u16(30),u16(32),u16(34)], v:[u16(36),u16(38),u16(40)],
+      i:[u16(42),u16(44),u16(46)], n:u16(48), tariff:v.getUint8(o+50), flags:v.getUint8(o+51)});
+  }
+  return out;
+}
+
+// ------------------------------------------------------------------ charts
+// Minimal canvas charts: time-series lines and labelled bars, with a hover tooltip.
+function niceStep(range, target) {
+  const raw = range / target, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+  return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p;
+}
+function setupCanvas(cv) {
+  const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  cv.width = Math.max(1, r.width * dpr); cv.height = Math.max(1, r.height * dpr);
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return {g, w:r.width, h:r.height};
+}
+function yAxis(g, w, h, pad, lo, hi, fmt) {
+  const step = niceStep(hi - lo || 1, 5); lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step || step;
+  g.font = '11px system-ui'; g.fillStyle = css('--muted'); g.strokeStyle = css('--line'); g.lineWidth = 1; g.textAlign = 'right'; g.textBaseline = 'middle';
+  for (let v = lo; v <= hi + step/2; v += step) {
+    const y = pad.t + (h - pad.t - pad.b) * (1 - (v - lo) / (hi - lo));
+    g.beginPath(); g.moveTo(pad.l, y + .5); g.lineTo(w - pad.r, y + .5); g.stroke();
+    g.fillText(fmt(v), pad.l - 6, y);
+  }
+  return [lo, hi];
+}
+const TSTEPS = [6e4, 3e5, 9e5, 18e5, 36e5, 3*36e5, 6*36e5, 12*36e5, DAY, 2*DAY, 7*DAY, 14*DAY, 30*DAY];
+function attachHover(cv, onMove) {
+  const tip = cv.parentNode.querySelector('.tip');
+  cv.onpointermove = e => {
+    const r = cv.getBoundingClientRect(), x = e.clientX - r.left;
+    const html = onMove(x);
+    if (!html) { tip.style.display = 'none'; return; }
+    tip.innerHTML = html; tip.style.display = 'block';
+    const tw = tip.offsetWidth; let left = x + 14; if (left + tw > r.width) left = x - tw - 14;
+    tip.style.left = Math.max(0, left) + 'px'; tip.style.top = '8px';
+  };
+  cv.onpointerleave = () => { tip.style.display = 'none'; onMove(null); };
+}
+// series: [{label,color,pts:[[t,y],...],fill,width}]
+function lineChart(cv, series, o) {
+  const draw = hx => {
+    const {g, w, h} = setupCanvas(cv), pad = {l:48, r:10, t:10, b:24};
+    g.clearRect(0, 0, w, h);
+    const all = series.flatMap(s => s.pts);
+    if (!all.length) { g.fillStyle = css('--muted'); g.font = '14px system-ui'; g.textAlign = 'center'; g.fillText('אין נתונים לטווח הזה', w/2, h/2); return null; }
+    const x0 = o.from ?? Math.min(...all.map(p => p[0])), x1 = o.to ?? Math.max(...all.map(p => p[0]));
+    let lo = o.yMin ?? Math.min(0, ...all.map(p => p[1])), hi = Math.max(...all.map(p => p[1])) * 1.08 || 1;
+    if (o.yMin === 'auto') { const ys = all.map(p => p[1]).filter(v => v > 0); lo = Math.min(...ys) - 2; hi = Math.max(...ys) + 2; }
+    [lo, hi] = yAxis(g, w, h, pad, lo, hi, o.yFmt);
+    const X = t => pad.l + (w - pad.l - pad.r) * (t - x0) / ((x1 - x0) || 1);
+    const Y = v => pad.t + (h - pad.t - pad.b) * (1 - (v - lo) / (hi - lo));
+    // time axis aligned to local time
+    const span = x1 - x0, step = TSTEPS.find(s => span / s <= 7) || 60*DAY;
+    const tz = -new Date(x0).getTimezoneOffset() * 6e4;
+    g.fillStyle = css('--muted'); g.textAlign = 'center'; g.textBaseline = 'top';
+    for (let t = Math.ceil((x0 + tz) / step) * step - tz; t <= x1; t += step) {
+      const lt = t + (-new Date(t).getTimezoneOffset() * 6e4 - tz);  // DST shift
+      if (X(lt) < w - 18) g.fillText(step < DAY ? hhmm(lt) : dm(lt), X(lt), h - pad.b + 6);
+    }
+    for (const s of series) {
+      if (!s.pts.length) continue;
+      const gapMax = o.gap || Infinity;
+      g.strokeStyle = s.color; g.lineWidth = s.width || 1.6; g.lineJoin = 'round';
+      const segs = []; let cur = [];
+      s.pts.forEach((p, i) => { if (i && p[0] - s.pts[i-1][0] > gapMax) { segs.push(cur); cur = []; } cur.push(p); });
+      segs.push(cur);
+      for (const sg of segs) {
+        g.beginPath(); sg.forEach((p, i) => i ? g.lineTo(X(p[0]), Y(p[1])) : g.moveTo(X(p[0]), Y(p[1]))); g.stroke();
+        if (s.fill && sg.length > 1) {
+          g.lineTo(X(sg[sg.length-1][0]), Y(Math.max(lo, 0))); g.lineTo(X(sg[0][0]), Y(Math.max(lo, 0))); g.closePath();
+          g.globalAlpha = .12; g.fillStyle = s.color; g.fill(); g.globalAlpha = 1;
+        }
+      }
+    }
+    if (hx == null) return null;
+    const ref = series.find(s => s.pts.length).pts;
+    const t = x0 + (hx - pad.l) / (w - pad.l - pad.r) * (x1 - x0);
+    let best = 0; ref.forEach((p, i) => { if (Math.abs(p[0] - t) < Math.abs(ref[best][0] - t)) best = i; });
+    const bt = ref[best][0];
+    g.strokeStyle = css('--muted'); g.lineWidth = 1; g.setLineDash([3, 3]);
+    g.beginPath(); g.moveTo(X(bt) + .5, pad.t); g.lineTo(X(bt) + .5, h - pad.b); g.stroke(); g.setLineDash([]);
+    let html = `<b>${o.tFmt ? o.tFmt(bt) : hhmm(bt)}</b>`;
+    for (const s of series) {
+      const p = s.pts.reduce((a, q) => Math.abs(q[0] - bt) < Math.abs(a[0] - bt) ? q : a, s.pts[0]);
+      if (!p) continue;
+      g.fillStyle = s.color; g.beginPath(); g.arc(X(p[0]), Y(p[1]), 3.5, 0, 7); g.fill();
+      html += `<br><span style="color:${s.color}">●</span> ${s.label}: <span class="num">${o.yFmt(p[1], true)}</span>`;
+    }
+    return html;
+  };
+  draw(null);
+  attachHover(cv, x => draw(x));
+}
+// items: [{label, value, color, tip}]
+function barChart(cv, items, o) {
+  const draw = hx => {
+    const {g, w, h} = setupCanvas(cv), pad = {l:48, r:10, t:10, b:24};
+    g.clearRect(0, 0, w, h);
+    if (!items.length) { g.fillStyle = css('--muted'); g.font = '14px system-ui'; g.textAlign = 'center'; g.fillText('אין נתונים לטווח הזה', w/2, h/2); return null; }
+    const [lo, hi] = yAxis(g, w, h, pad, 0, Math.max(...items.map(i => i.value)) * 1.08 || 1, o.yFmt);
+    const bw = Math.min(64, (w - pad.l - pad.r) / items.length), gap = Math.min(4, bw * .2);
+    pad.l += ((w - pad.l - pad.r) - bw * items.length) / 2;  // few bars: centred
+    const Y = v => pad.t + (h - pad.t - pad.b) * (1 - (v - lo) / (hi - lo));
+    const every = Math.ceil(items.length / Math.max(1, Math.floor((w - pad.l) / 46)));
+    let hi_i = hx == null ? -1 : Math.floor((hx - pad.l) / bw);
+    if (hi_i < 0 || hi_i >= items.length) hi_i = -1;
+    g.textAlign = 'center'; g.textBaseline = 'top'; g.font = '11px system-ui';
+    items.forEach((it, i) => {
+      const x = pad.l + i * bw;
+      g.fillStyle = it.color || css('--accent'); g.globalAlpha = hi_i === -1 || hi_i === i ? 1 : .55;
+      g.fillRect(x + gap/2, Y(it.value), bw - gap, Y(0) - Y(it.value)); g.globalAlpha = 1;
+      if (i % every === 0) { g.fillStyle = css('--muted'); g.fillText(it.label, x + bw/2, h - pad.b + 6); }
+    });
+    return hi_i >= 0 ? items[hi_i].tip : null;
+  };
+  draw(null);
+  attachHover(cv, x => draw(x));
+}
+function legend(id, items) { $(id).innerHTML = items.map(([c, l]) => `<span><i style="background:${c}"></i>${l}</span>`).join(''); }
+
+// ------------------------------------------------------------------ views
+function show(view) { for (const v of ['vSetup','vLogin','vApp']) $(v).classList.toggle('hide', v !== view); }
+function showLogin() { clearInterval(S.timer); S.timer = null; show('vLogin'); $('lUser').focus(); }
+
+async function boot() {
+  let st;
+  try { st = await (await fetch('api/status')).json(); } catch (e) { setTimeout(boot, 3000); return; }
+  if (!st.configured) { setupView(st); return; }
+  if (!st.authed) { showLogin(); return; }
+  startApp();
+}
+
+async function doLogin() {
+  msg('lMsg', '');
+  try {
+    await post('api/login', {user:$('lUser').value.trim(), pass:$('lPass').value, remember:$('lRem').checked ? 1 : 0});
+    $('lPass').value = ''; startApp();
+  } catch (e) {
+    msg('lMsg', e.status === 429 ? `יותר מדי ניסיונות. נסה שוב בעוד ${Math.ceil(e.data.wait/1000)} שניות.` : 'שם משתמש או סיסמה שגויים');
+  }
+}
+
+// First-time setup. If the home Wi-Fi was preset in secrets.h and the device is
+// already on it, only the user is created.
+let SETUP = {};
+function setupView(st) {
+  SETUP = st;
+  show('vSetup');
+  $('sHost').value = st.host;
+  const wifiNeeded = !st.has_wifi || st.setup;
+  const showWifi = wifiNeeded || st.ap;
+  $('sWifi').classList.toggle('hide', !showWifi);
+  if (showWifi) scan('sScanList', 'sSsid');
+  $('sNote').textContent = !st.has_wifi ? 'בחר את רשת ה-Wi-Fi של הבית והגדר שם משתמש וסיסמה לממשק.'
+    : showWifi ? 'רשת הבית הוגדרה מראש, אבל המכשיר לא הצליח להתחבר אליה. אפשר לבחור רשת אחרת, או להשאיר ריק ולנסות שוב עם הרשת שהוגדרה.'
+    : 'המכשיר כבר מחובר לרשת הבית. נשאר ליצור שם משתמש וסיסמה לממשק.';
+}
+
+async function doSetup() {
+  msg('sMsg', '');
+  const d = {ssid:$('sSsid').value.trim(), wpass:$('sWpass').value, host:$('sHost').value.trim(), user:$('sUser').value.trim(), pass:$('sPass').value};
+  if ($('sWifi').classList.contains('hide')) { d.ssid = ''; d.wpass = ''; d.host = ''; }
+  if (!d.ssid && !SETUP.has_wifi) return msg('sMsg', 'בחר רשת Wi-Fi');
+  if (d.pass.length < 8) return msg('sMsg', 'הסיסמה צריכה לפחות 8 תווים');
+  if (d.pass !== $('sPass2').value) return msg('sMsg', 'הסיסמאות לא זהות');
+  if (d.host && !/^[a-z0-9-]{1,32}$/i.test(d.host)) return msg('sMsg', 'שם המכשיר: אותיות באנגלית, ספרות ומקף בלבד');
+  try {
+    const r = await post('api/setup', d);
+    $('sBtn').disabled = true;
+    if (!r.reboot) { msg('sMsg', 'המשתמש נוצר. עוברים למסך הכניסה...', true); setTimeout(showLogin, 1500); return; }
+    msg('sMsg', d.ssid ? `נשמר. המכשיר מתחבר עכשיו לרשת "${d.ssid}". חזור לרשת הבית וגלוש אל http://${r.host}.local (או לכתובת ה-IP שמופיעה בנתב).`
+      : `נשמר. המכשיר מופעל מחדש ומתחבר לרשת הבית. גלוש אל http://${r.host}.local (או לכתובת ה-IP שמופיעה בנתב).`, true);
+  } catch (e) { msg('sMsg', 'שמירה נכשלה: ' + e.message); }
+}
+
+async function scan(listId, inputId) {
+  const sel = $(listId); sel.innerHTML = '<option value="">סורק רשתות...</option>';
+  for (let i = 0; i < 15; i++) {
+    let r; try { r = await api('api/scan'); } catch (e) { return; }
+    if (r.status === 200) {
+      const j = await r.json(), seen = new Set();
+      const list = j.list.sort((a, b) => b.rssi - a.rssi).filter(n => !seen.has(n.ssid) && seen.add(n.ssid));
+      sel.innerHTML = '<option value="">בחר רשת...</option>' + list.map(n =>
+        `<option value="${n.ssid.replace(/"/g, '&quot;')}">${n.ssid.replace(/</g, '&lt;')} (${n.rssi} dBm${n.open ? ', פתוחה' : ''})</option>`).join('');
+      sel.onchange = () => { if (sel.value) $(inputId).value = sel.value; };
+      return;
+    }
+    await new Promise(res => setTimeout(res, 1000));
+  }
+  sel.innerHTML = '<option value="">הסריקה נכשלה</option>';
+}
+
+async function startApp() {
+  show('vApp');
+  try { S.settings = await (await api('api/settings')).json(); } catch (e) { return; }
+  fillSettings();
+  tab(S.tab);
+  clearInterval(S.timer);
+  S.timer = setInterval(() => { if (!document.hidden) refreshLive(); }, 2000);
+  refreshLive();
+}
+
+function tab(name) {
+  S.tab = name;
+  for (const b of $('nav').children) b.classList.toggle('on', b.dataset.tab === name);
+  for (const [k, id] of [['now','tNow'],['hist','tHist'],['cost','tCost'],['set','tSet']]) $(id).classList.toggle('hide', k !== name);
+  if (name === 'hist') loadHistory();
+  if (name === 'cost') loadCosts();
+  if (name === 'now') drawLive();
+}
+
+// ------------------------------------------------------------------ now
+async function refreshLive() {
+  let L;
+  try { L = await (await api('api/live')).json(); } catch (e) { $('hDot').className = 'dot bad'; return; }
+  S.live = L;
+  const stale = !L.ok || L.age > 15000;
+  $('hDot').className = 'dot ' + (stale ? 'bad' : 'ok');
+  $('bDemo').style.display = L.sys.demo ? 'block' : 'none';
+  $('bStale').style.display = stale && !L.sys.demo ? 'block' : 'none';
+  $('bClock').style.display = L.tsrc === 'none' ? 'block' : 'none';
+  $('hInfo').textContent = L.ok ? `עודכן לפני ${Math.round(L.age/1000)} שנ׳` : '';
+  if (S.tab === 'set') fillSys();
+  if (S.tab !== 'now') return;
+
+  const m = L.m, br = (S.settings && S.settings.breaker) || 25;
+  $('nPower').innerHTML = `${kw(m.p)} <small>kW</small>`;
+  const costHour = m.p / 1000 * L.price;
+  $('nPowerSub').innerHTML = (m.pe > 0 ? `החזרה לרשת: <span class="num">${kw(m.pe)} kW</span> · ` : '') +
+    `עלות בקצב הזה: <span class="num">${ils(costHour)}</span> לשעה` + (L.disc ? ` · <b style="color:var(--disc)">הנחה ${nf(L.disc/10, 0)}% עכשיו</b>` : '');
+  const T = L.today;
+  if (T.ok) {
+    $('nToday').innerHTML = `${kwh(T.imp)} <small>kWh</small> · ${ils(T.cost)}`;
+    compareYesterday(T).then(s => $('nTodaySub').innerHTML = s);
+    $('nPeak').innerHTML = `${kw(T.peak)} <small>kW</small>`;
+    $('nPeakSub').textContent = T.peak_ts ? `בשעה ${hhmm(T.peak_ts*1000)}` : '';
+    $('nBase').innerHTML = `${nf(T.base, 0)} <small>W</small>`;
+    $('nBaseSub').innerHTML = `כ-<span class="num">${ils(T.base/1000*720*L.price)}</span> בחודש על מכשירים שדולקים כל הזמן`;
+  }
+  // phases
+  const n = Math.max(1, m.ph);
+  const ph = $('phases');
+  if (ph.children.length !== n) ph.innerHTML = Array.from({length:n}, (_, k) =>
+    `<div class="card phase p${k+1}"><h2>${n > 1 ? 'פאזה L' + (k+1) : 'חיבור חד-פאזי'}</h2><div class="val num" id="pP${k}"></div><div class="sub num" id="pS${k}"></div><div class="bar"><div id="pB${k}"></div></div></div>`).join('');
+  for (let k = 0; k < n; k++) {
+    const [p, dv, ca] = m.l[k];
+    $('pP' + k).innerHTML = `${kw(p)} <small>kW</small>`;
+    $('pS' + k).textContent = `${nf(dv/10, 1)} V · ${nf(ca/100, 1)} A`;
+    const pct = Math.min(100, ca / 100 / br * 100);
+    const b = $('pB' + k); b.style.width = pct + '%'; b.style.background = pct > 85 ? css('--bad') : pct > 60 ? css('--warn') : css('--ok');
+  }
+  $('nMeter').innerHTML = [
+    ['מונה צריכה', `${nf(m.imp/1000, 3)} kWh`],
+    m.t[1] || m.t[2] ? ['T1 / T2 / T3', `${nf(m.t[0]/1000,1)} / ${nf(m.t[1]/1000,1)} / ${nf(m.t[2]/1000,1)}`] : null,
+    m.exp ? ['מונה החזרה לרשת', `${nf(m.exp/1000, 3)} kWh`] : null,
+    ['תעריף פעיל במונה', m.tariff],
+    ['דיווחים מהמונה', `${nf(L.st.ok)} תקינים, ${nf(L.st.crc)} שגיאות CRC`],
+    ['מחיר עכשיו', `${ils(L.price)} לקוט"ש`],
+  ].filter(Boolean).map(([k, v]) => `<div>${k}</div><div dir="auto">${v}</div>`).join('');
+
+  // live chart
+  try {
+    const r = await (await api(`api/recent?since=${S.recentUp}`)).json();
+    const base = Date.now() - r.up;   // browser clock; independent of the device clock
+    for (const s of r.s) S.recent.push({t:base + s[0], p:s[1], pe:s[2], l:[s[3], s[4], s[5]]});
+    if (r.s.length) S.recentUp = r.s[r.s.length - 1][0];
+    const cut = Date.now() - 15 * 6e4;
+    while (S.recent.length && S.recent[0].t < cut) S.recent.shift();
+    drawLive();
+  } catch (e) {}
+}
+
+async function compareYesterday(T) {
+  // Yesterday until the same time of day, from yesterday's hour records
+  const now = Date.now(), y0 = startOfDay(now - DAY) , ySame = y0 + (now - startOfDay(now));
+  if (!S.yday || now - S.ydayAt > 6e5) {
+    try { S.yday = await history('h', y0, startOfDay(now)); S.ydayAt = now; } catch (e) { return ''; }
+  }
+  let wh = 0;
+  for (const r of S.yday) {
+    if (r.t + 36e5 <= ySame) wh += r.imp;
+    else if (r.t < ySame) wh += r.imp * (ySame - r.t) / 36e5;
+  }
+  if (wh < 300) return 'ההשוואה לאתמול תופיע אחרי יממה של נתונים';
+  const pct = Math.round((T.imp - wh) / wh * 100);
+  return `<span class="${pct > 0 ? 'up' : 'down'}">${pct > 0 ? '▲' : '▼'} ${Math.abs(pct)}%</span> לעומת אתמול באותה שעה (${U(kwh(wh), 'kWh')})`;
+}
+
+function drawLive() {
+  if (S.tab !== 'now') return;
+  const now = Date.now(), R = S.recent;
+  const series = S.liveMode === 'total'
+    ? [{label:'סה"כ', color:css('--accent'), pts:R.map(s => [s.t, s.p]), fill:true, width:2}]
+    : [0, 1, 2].slice(0, Math.max(1, S.live ? S.live.m.ph : 3)).map(k => ({label:'L' + (k+1), color:css('--l' + (k+1)), pts:R.map(s => [s.t, s.l[k]])}));
+  if (S.liveMode === 'total' && R.some(s => s.pe > 0)) series.push({label:'החזרה', color:css('--disc'), pts:R.map(s => [s.t, s.pe])});
+  lineChart($('cLive'), series, {from:now - 15 * 6e4, to:now, gap:15000, yFmt:(v, tip) => tip ? kw(v) + ' kW' : nf(v/1000, v % 1000 ? 1 : 0), tFmt:t => new Date(t).toLocaleTimeString('he-IL')});
+  legend('liveLegend', series.map(s => [s.color, s.label]));
+}
+
+// ------------------------------------------------------------------ history
+const H = {range:'day', metric:'energy', anchor:Date.now(), data:[], tier:'m', from:0, to:0};
+
+function histWindow() {
+  const a = new Date(H.anchor);
+  if (H.range === 'day') { const f = startOfDay(H.anchor); return [f, startOfDay(f + DAY + 36e5 * 3), 'm']; }
+  if (H.range === 'week') { const f = startOfDay(H.anchor - a.getDay() * DAY); return [f, startOfDay(f + 7 * DAY + 36e5*3), 'h']; }
+  if (H.range === 'month') { const f = new Date(a.getFullYear(), a.getMonth(), 1).getTime(); return [f, new Date(a.getFullYear(), a.getMonth() + 1, 1).getTime(), 'd']; }
+  if (H.range === 'year') { const f = new Date(a.getFullYear(), 0, 1).getTime(); return [f, new Date(a.getFullYear() + 1, 0, 1).getTime(), 'd']; }
+  const f = $('hFrom').valueAsDate ? startOfDay($('hFrom').valueAsDate.getTime() + 36e5*12) : startOfDay(Date.now() - 7*DAY);
+  const t = $('hTo').valueAsDate ? startOfDay($('hTo').valueAsDate.getTime() + 36e5*36) : startOfDay(Date.now() + DAY);
+  const days = (t - f) / DAY;
+  return [f, Math.max(t, f + DAY), days <= 2 ? 'm' : days <= 45 ? 'h' : 'd'];
+}
+
+function histLabel(f, t) {
+  const a = new Date(f);
+  if (H.range === 'day') return `יום ${WD[a.getDay()]}׳ ${dmy(f)}`;
+  if (H.range === 'week') return `${dm(f)} – ${dmy(t - DAY)}`;
+  if (H.range === 'month') return `${MONTHS[a.getMonth()]} ${a.getFullYear()}`;
+  if (H.range === 'year') return String(a.getFullYear());
+  return `${dmy(f)} – ${dmy(t - DAY)}`;
+}
+
+function shift(dir) {
+  const a = new Date(H.anchor);
+  if (H.range === 'day') a.setDate(a.getDate() + dir);
+  else if (H.range === 'week') a.setDate(a.getDate() + 7 * dir);
+  else if (H.range === 'month') a.setMonth(a.getMonth() + dir, 1);
+  else if (H.range === 'year') a.setFullYear(a.getFullYear() + dir);
+  H.anchor = Math.min(a.getTime(), Date.now());
+  loadHistory();
+}
+
+async function loadHistory() {
+  let [from, to, tier] = histWindow();
+  H.from = from; H.to = to;
+  $('hLabel').textContent = histLabel(from, to);
+  $('hNext').disabled = to > Date.now();
+  let data = [];
+  try {
+    data = await history(tier, from, to);
+    // Minute data is kept only a few days: fall back to hours
+    if (tier === 'm' && !data.length && from < Date.now() - 2 * DAY) { tier = 'h'; data = await history(tier, from, to); }
+  } catch (e) { return; }
+  // Day records exist only for finished days: add today from the live summary
+  if (tier === 'd' && S.live && S.live.today.ok) {
+    const d = S.live.today.day * 1000;
+    if (d >= from && d < to && !data.some(r => r.t === d))
+      data.push({t:d, imp:S.live.today.imp, exp:S.live.today.exp, cost:S.live.today.cost, pAvg:0, pMax:S.live.today.peak, pMin:S.live.today.base, pl:[0,0,0], v:[0,0,0], i:[0,0,0], n:0, live:true});
+  }
+  H.tier = tier; H.data = data;
+  $('hCsv').href = `api/export.csv?tier=${tier}&from=${from/1000}&to=${to/1000}`;
+  drawHistory();
+}
+
+function drawHistory() {
+  const {data, tier, from, to} = H, cv = $('cHist');
+  const per = tier === 'm' ? 6e4 : tier === 'h' ? 36e5 : DAY;
+  // stats
+  const imp = data.reduce((a, r) => a + r.imp, 0), exp = data.reduce((a, r) => a + r.exp, 0), cost = data.reduce((a, r) => a + r.cost, 0);
+  const peak = data.reduce((a, r) => r.pMax > a.pMax ? r : a, {pMax:0});
+  const withMin = data.filter(r => r.n);
+  const base = withMin.length ? Math.min(...withMin.map(r => tier === 'm' ? r.pAvg : r.pMin)) : 0;
+  const hours = data.length ? Math.max(1, (Math.min(to, Date.now()) - Math.max(from, data[0].t)) / 36e5) : 1;
+  const plSum = [0, 1, 2].map(k => data.reduce((a, r) => a + r.pl[k], 0)), plTot = plSum[0] + plSum[1] + plSum[2];
+  const ph = S.live ? Math.max(1, S.live.m.ph) : 3;
+  const cards = [
+    ['צריכה', `${kwh(imp)} <small>kWh</small>`, exp ? `החזרה לרשת: ${U(kwh(exp), 'kWh')}` : ''],
+    ['עלות', ils(cost), imp ? `ממוצע ${U(ils(cost / imp * 1000))} לקוט"ש` : ''],
+    ['הספק ממוצע', `${kw(imp / hours)} <small>kW</small>`, `שיא ${U(kw(peak.pMax), 'kW')}` + (peak.t ? ` ב-${U(tier === 'd' ? dm(peak.t) : (H.range === 'day' ? '' : dm(peak.t) + ' ') + hhmm(peak.t))}` : '')],
+    ['צריכת בסיס', `${nf(base)} <small>W</small>`, 'ממוצע הדקה הנמוך ביותר'],
+  ];
+  if (ph > 1 && plTot) cards.push(['חלוקה בין הפאזות', `<span style="font-size:18px">` + plSum.map((v, k) => `<span style="white-space:nowrap"><span style="color:var(--l${k+1})">L${k+1}</span> ${Math.round(v / plTot * 100)}%</span>`).join(' · ') + '</span>', 'ממוצע ההספק בכל פאזה']);
+  $('hStats').innerHTML = cards.map(([h, v, s]) => `<div class="card"><h2>${h}</h2><div class="val num">${v}</div><div class="sub">${s}</div></div>`).join('');
+
+  const M = H.metric;
+  const titles = {energy:'צריכה (kWh)', power:'הספק (kW)', phases:'הספק לפי פאזה (kW)', voltage:'מתח (V)', current:'זרם מרבי (A)', cost:'עלות (₪)'};
+  $('hChartTitle').textContent = titles[M] + (tier === 'm' ? ' · לפי דקה' : tier === 'h' ? ' · לפי שעה' : ' · לפי יום');
+  $('hNote').textContent = data.some(r => r.flags & 4) ? 'חלק מהנתונים נוצרו במצב הדגמה.' : '';
+  const tFmt = t => tier === 'd' ? `יום ${WD[new Date(t).getDay()]}׳ ${dmy(t)}` : `${dm(t)} ${hhmm(t)}`;
+
+  if (M === 'energy' || M === 'cost') {
+    let items;
+    if (H.range === 'year') {  // group days by month
+      const months = new Map();
+      for (const r of data) { const d = new Date(r.t), k = d.getFullYear() * 12 + d.getMonth(); const e = months.get(k) || {t:new Date(d.getFullYear(), d.getMonth(), 1).getTime(), imp:0, cost:0}; e.imp += r.imp; e.cost += r.cost; months.set(k, e); }
+      items = [...months.values()].sort((a, b) => a.t - b.t).map(e => ({label:MONTHS[new Date(e.t).getMonth()].slice(0, 3), value:M === 'cost' ? e.cost / 1e6 : e.imp / 1000,
+        tip:`<b>${MONTHS[new Date(e.t).getMonth()]}</b><br>${kwh(e.imp)} kWh · ${ils(e.cost)}`}));
+    } else if (tier === 'm') {  // minutes are too thin for bars: 15-minute groups
+      const q = new Map();
+      for (const r of data) { const k = Math.floor(r.t / 9e5) * 9e5; const e = q.get(k) || {t:k, imp:0, cost:0}; e.imp += r.imp; e.cost += r.cost; q.set(k, e); }
+      items = [...q.values()].map(e => ({label:hhmm(e.t), value:M === 'cost' ? e.cost / 1e6 : e.imp / 1000, color:barColor(e.t),
+        tip:`<b>${hhmm(e.t)}–${hhmm(e.t + 9e5)}</b><br>${nf(e.imp)} Wh · ${ils(e.cost)}`}));
+    } else {
+      items = data.map(r => ({label:tier === 'h' ? (H.range === 'day' ? hhmm(r.t) : dm(r.t) + ' ' + p2(new Date(r.t).getHours())) : dm(r.t),
+        value:M === 'cost' ? r.cost / 1e6 : r.imp / 1000, color:tier === 'h' ? barColor(r.t) : null,
+        tip:`<b>${tFmt(r.t)}${r.live ? ' (עד עכשיו)' : ''}</b><br>${kwh(r.imp)} kWh · ${ils(r.cost)}<br>שיא ${kw(r.pMax)} kW`}));
+    }
+    barChart(cv, items, {yFmt:v => M === 'cost' ? '₪' + nf(v, v < 10 ? 1 : 0) : nf(v, v < 10 ? 1 : 0)});
+    const leg = [[css('--accent'), M === 'cost' ? 'עלות' : 'צריכה']];
+    if (tier !== 'd' && hasDiscount()) leg.push([css('--disc'), 'שעות עם הנחה']);
+    legend('hLegend', leg);
+    return;
+  }
+  const rows = data.filter(r => r.n);
+  let series;
+  if (M === 'power') series = [
+    {label:'ממוצע', color:css('--accent'), pts:rows.map(r => [r.t, r.pAvg]), fill:true, width:1.8},
+    {label:'מרבי', color:css('--bad'), pts:rows.map(r => [r.t, r.pMax]), width:1}];
+  else {
+    const key = M === 'phases' ? 'pl' : M === 'voltage' ? 'v' : 'i';
+    series = [0, 1, 2].slice(0, ph).map(k => ({label:'L' + (k+1), color:css('--l' + (k+1)), pts:rows.filter(r => M !== 'voltage' || r.v[k]).map(r => [r.t, r[key][k]])}));
+  }
+  const fmt = {power:(v, t) => t ? kw(v) + ' kW' : nf(v/1000, 1), phases:(v, t) => t ? kw(v) + ' kW' : nf(v/1000, 1),
+    voltage:(v, t) => nf(v/10, t ? 1 : 0) + (t ? ' V' : ''), current:(v, t) => nf(v/100, t ? 1 : 0) + (t ? ' A' : '')}[M];
+  lineChart(cv, series, {from, to:Math.min(to, Date.now()), gap:per * 3, yFmt:fmt, tFmt, yMin:M === 'voltage' ? 'auto' : undefined});
+  legend('hLegend', series.map(s => [s.color, s.label]));
+}
+
+function hasDiscount() { return S.settings && S.settings.rules.some(r => r.en && r.pct); }
+function discountAt(t) {
+  const d = new Date(t), wd = d.getDay(), h = d.getHours();
+  let best = 0;
+  for (const r of S.settings.rules) {
+    if (!r.en || !r.pct || !(r.days & (1 << wd))) continue;
+    const ok = r.s < r.e ? h >= r.s && h < r.e : h >= r.s || h < r.e;
+    if (ok && r.pct > best) best = r.pct;
+  }
+  return best;
+}
+function barColor(t) { return hasDiscount() && discountAt(t) ? css('--disc') : css('--accent'); }
+
+// ------------------------------------------------------------------ costs
+function billStart(t, day) {
+  const d = new Date(t);
+  const s = new Date(d.getFullYear(), d.getMonth(), day);
+  if (d.getDate() < day) s.setMonth(s.getMonth() - 1);
+  return s.getTime();
+}
+const addMonth = t => { const d = new Date(t); d.setMonth(d.getMonth() + 1); return d.getTime(); };
+
+async function loadCosts() {
+  const st = S.settings, bd = st.bill_day, now = Date.now();
+  const curStart = billStart(now, bd), curEnd = addMonth(curStart);
+  let first = curStart; for (let i = 0; i < 12; i++) first = billStart(first - DAY, bd);
+  let days, hours;
+  try { [days, hours] = await Promise.all([history('d', first, now + DAY), history('h', startOfDay(now - 30 * DAY), now + 36e5)]); } catch (e) { return; }
+  const T = S.live && S.live.today;
+  if (T && T.ok && !days.some(r => r.t === T.day * 1000)) days.push({t:T.day * 1000, imp:T.imp, cost:T.cost, live:true});
+
+  const inRange = (a, b) => days.filter(r => r.t >= a && r.t < b);
+  const cur = inRange(curStart, curEnd), prevStart = billStart(curStart - DAY, bd), prev = inRange(prevStart, curStart);
+  const sum = (rs, k) => rs.reduce((a, r) => a + r[k], 0);
+  const fixedU = st.fixed * 1e4;   // agorot -> micro-ILS
+  const curCost = sum(cur, 'cost'), curImp = sum(cur, 'imp');
+  const elapsed = Math.max(.5, (now - curStart) / DAY), total = (curEnd - curStart) / DAY;
+  $('cNow').innerHTML = `${ils(curCost)} <small>· ${kwh(curImp)} kWh</small>`;
+  $('cNowSub').innerHTML = `מ-${U(dmy(curStart))}, ${U(nf(elapsed, 1))} מתוך ${nf(total)} ימים` + (fixedU ? ` (בלי תשלום קבוע)` : '');
+  const fc = curCost / elapsed * total + fixedU;
+  $('cFc').innerHTML = cur.length ? ils(fc) : '–';
+  $('cFcSub').innerHTML = cur.length ? `${U(kwh(curImp / elapsed * total), 'kWh')} צפויים` + (fixedU ? ` · כולל תשלום קבוע ${U(ils(fixedU))}` : '') + (elapsed < 3 ? ' · הצפי יתייצב אחרי כמה ימים' : '') : '';
+  $('cPrev').innerHTML = prev.length ? `${ils(sum(prev, 'cost') + fixedU)}` : '–';
+  $('cPrevSub').innerHTML = prev.length ? `${U(kwh(sum(prev, 'imp')), 'kWh')} · ${U(dmy(prevStart) + ' – ' + dmy(curStart - DAY))}` + (prev.length < 25 ? ` · חסרים נתונים לחלק מהימים` : '') : 'אין עדיין נתונים';
+  // savings: full price minus what was paid, this period, from hour records
+  const curHours = hours.filter(r => r.t >= curStart);
+  const full = curHours.reduce((a, r) => a + r.imp * st.price / 1000, 0), paid = sum(curHours, 'cost');
+  const discWh = curHours.filter(r => discountAt(r.t)).reduce((a, r) => a + r.imp, 0), hImp = sum(curHours, 'imp');
+  $('cSave').innerHTML = hasDiscount() ? ils(Math.max(0, full - paid)) : '–';
+  $('cSaveSub').textContent = hasDiscount() ? (hImp ? `${Math.round(discWh / hImp * 100)}% מהצריכה בתקופה הייתה בשעות ההנחה` : '') : 'לא הוגדר מסלול הנחה';
+
+  barChart($('cDays'), cur.map(r => ({label:dm(r.t), value:r.cost / 1e6,
+    tip:`<b>יום ${WD[new Date(r.t).getDay()]}׳ ${dmy(r.t)}${r.live ? ' (עד עכשיו)' : ''}</b><br>${ils(r.cost)} · ${kwh(r.imp)} kWh`})), {yFmt:v => '₪' + nf(v, v < 10 ? 1 : 0)});
+
+  const prof = Array.from({length:24}, () => ({wh:0, days:new Set()}));
+  for (const r of hours) { const d = new Date(r.t); prof[d.getHours()].wh += r.imp; prof[d.getHours()].days.add(startOfDay(r.t)); }
+  const today0 = startOfDay(now);
+  barChart($('cProfile'), prof.map((p, h) => {
+    const avg = p.days.size ? p.wh / p.days.size : 0, disc = hasDiscount() && discountAt(today0 + h * 36e5);
+    return {label:p2(h), value:avg / 1000, color:disc ? css('--disc') : css('--accent'),
+      tip:`<b>${p2(h)}:00–${p2((h + 1) % 24)}:00</b><br>${nf(avg)} Wh בממוצע` + (disc ? `<br>הנחה ${nf(disc / 10)}% (היום)` : '')};
+  }), {yFmt:v => nf(v, 1)});
+
+  const periods = [];
+  for (let s = billStart(first + DAY, bd); s <= now; s = addMonth(s)) {
+    const rs = inRange(s, addMonth(s));
+    if (rs.length) periods.push({t:s, imp:sum(rs, 'imp'), cost:sum(rs, 'cost'), n:rs.length});
+  }
+  barChart($('cMonths'), periods.map(p => ({label:MONTHS[new Date(p.t).getMonth()].slice(0, 3) + (bd > 1 ? '*' : ''), value:p.cost / 1e6,
+    tip:`<b>${dmy(p.t)} – ${dmy(addMonth(p.t) - DAY)}</b><br>${ils(p.cost)} · ${kwh(p.imp)} kWh<br>${p.n} ימים עם נתונים`})), {yFmt:v => '₪' + nf(v)});
+}
+
+// ------------------------------------------------------------------ settings
+function fillSettings() {
+  const s = S.settings;
+  $('gPrice').value = (s.price / 1e6).toFixed(4);
+  $('gFixed').value = (s.fixed / 100).toFixed(2);
+  $('gBill').value = s.bill_day;
+  const sel = $('gBreaker'); if (![...sel.options].some(o => +o.value === s.breaker)) sel.add(new Option(s.breaker)); sel.value = s.breaker;
+  $('wSsid').value = s.ssid; $('wHost').value = s.host; $('aUser').value = s.user;
+  $('yDemo').checked = s.demo;
+  renderRules(s.rules);
+}
+function renderRules(rules) {
+  $('gRules').innerHTML = rules.map((r, i) => `<tr>
+    <td><input type="checkbox" id="r${i}en" ${r.en ? 'checked' : ''}></td>
+    <td><input type="number" id="r${i}pct" min="0" max="100" step="0.1" style="width:72px" value="${r.pct / 10}" dir="ltr"></td>
+    <td><select id="r${i}s">${Array.from({length:24}, (_, h) => `<option ${h === r.s ? 'selected' : ''} value="${h}">${p2(h)}:00</option>`).join('')}</select></td>
+    <td><select id="r${i}e">${Array.from({length:24}, (_, h) => h + 1).map(h => `<option ${h === r.e ? 'selected' : ''} value="${h}">${p2(h)}:00</option>`).join('')}</select></td>
+    <td class="days">${WD.map((d, k) => `<label>${d}<input type="checkbox" id="r${i}d${k}" ${r.days & (1 << k) ? 'checked' : ''}></label>`).join('')}</td></tr>`).join('');
+}
+function readRules() {
+  return S.settings.rules.map((_, i) => ({en:$(`r${i}en`).checked ? 1 : 0, pct:Math.round(parseFloat($(`r${i}pct`).value || 0) * 10),
+    s:+$(`r${i}s`).value, e:+$(`r${i}e`).value, days:WD.reduce((a, _, k) => a | ($(`r${i}d${k}`).checked ? 1 << k : 0), 0)}));
+}
+function preset(kind) {
+  const rules = readRules();
+  let i = rules.findIndex(r => !r.en); if (i < 0) i = rules.length - 1;
+  rules[i] = {flat:{en:1, pct:70, s:0, e:24, days:127}, night:{en:1, pct:200, s:23, e:7, days:127}, day:{en:1, pct:150, s:7, e:17, days:31}}[kind];
+  renderRules(rules);
+  msg('gMsg', 'נוסף כלל לדוגמה. עדכן את אחוז ההנחה לפי המסלול שלך ולחץ שמירה.', true);
+}
+async function saveTariff() {
+  const price = Math.round(parseFloat($('gPrice').value) * 1e6);
+  if (!(price >= 1e4 && price <= 1e7)) return msg('gMsg', 'מחיר לא תקין');
+  const d = {price, fixed:Math.round(parseFloat($('gFixed').value || 0) * 100), bill_day:$('gBill').value, breaker:$('gBreaker').value};
+  readRules().forEach((r, i) => Object.assign(d, {[`r${i}_en`]:r.en, [`r${i}_pct`]:r.pct, [`r${i}_s`]:r.s, [`r${i}_e`]:r.e, [`r${i}_days`]:r.days}));
+  try { await post('api/settings', d); S.settings = await (await api('api/settings')).json(); fillSettings(); msg('gMsg', 'נשמר', true); }
+  catch (e) { msg('gMsg', 'שמירה נכשלה: ' + e.message); }
+}
+async function saveWifi() {
+  const ssid = $('wSsid').value.trim(), host = $('wHost').value.trim();
+  if (!ssid) return msg('wMsg', 'חסר שם רשת');
+  if (host && !/^[a-z0-9-]{1,32}$/i.test(host)) return msg('wMsg', 'שם המכשיר: אותיות באנגלית, ספרות ומקף בלבד');
+  try { await post('api/wifi', {ssid, wpass:$('wPass').value, host}); msg('wMsg', `נשמר. המכשיר מופעל מחדש ומתחבר ל-"${ssid}". אם הוא לא יתחבר תוך 3 דקות, תיפתח שוב הרשת ${S.settings.ap_ssid}.`, true); }
+  catch (e) { msg('wMsg', 'שמירה נכשלה: ' + e.message); }
+}
+async function saveAccount() {
+  if ($('aPass').value.length < 8) return msg('aMsg', 'הסיסמה החדשה צריכה לפחות 8 תווים');
+  if ($('aPass').value !== $('aPass2').value) return msg('aMsg', 'הסיסמאות לא זהות');
+  try { await post('api/account', {cur:$('aCur').value, user:$('aUser').value.trim(), pass:$('aPass').value}); msg('aMsg', 'עודכן. יש להיכנס מחדש.', true); setTimeout(showLogin, 1500); }
+  catch (e) { msg('aMsg', e.message === 'cur' ? 'הסיסמה הנוכחית שגויה' : 'עדכון נכשל'); }
+}
+function fillSys() {
+  const L = S.live; if (!L) return;
+  const up = L.up / 1000, fsPct = Math.round(L.sys.fs_used / L.sys.fs_total * 100), f = S.settings.fs || {};
+  $('ySys').innerHTML = [
+    ['גרסה', S.settings.ver || ''], ['Wi-Fi', L.sys.wifi ? `${S.settings.ssid} (${L.sys.rssi} dBm)` : 'לא מחובר'],
+    ['רשת גיבוי', L.sys.ap ? `${S.settings.ap_ssid} פעילה` : 'כבויה'], ['שעון', {ntp:'מסונכרן (אינטרנט)', meter:'לפי המונה', none:'לא מסונכרן'}[L.tsrc]],
+    ['זמן פעולה', `${Math.floor(up / 86400)} ימים, ${Math.floor(up % 86400 / 3600)} שעות, ${Math.floor(up % 3600 / 60)} דקות`], ['זיכרון פנוי', `${nf(L.sys.heap / 1024)} KB`],
+    ['אחסון היסטוריה', `${nf(L.sys.fs_used / 1024)} / ${nf(L.sys.fs_total / 1024)} KB (${fsPct}%)`],
+    ['קבצי היסטוריה', `${f.m ?? '–'} ימים בדקות · ${f.h ?? '–'} חודשים בשעות · ${f.d ?? '–'} שנים בימים`],
+    ['דיווחים מהמונה', `${nf(L.st.ok)} תקינים, ${nf(L.st.crc)} שגיאות CRC`],
+  ].map(([k, v]) => `<div>${k}</div><div dir="auto">${v}</div>`).join('');
+}
+async function setDemo(on) {
+  try { await post('api/settings', {demo:on ? 1 : 0}); S.settings.demo = on; S.recent = []; S.recentUp = 0; msg('yMsg', on ? 'מצב הדגמה הופעל' : 'מצב הדגמה כובה. מומלץ למחוק את נתוני ההדגמה.', true); }
+  catch (e) { msg('yMsg', 'שמירה נכשלה'); }
+}
+let clearArmed = 0;
+async function clearHist() {
+  if (Date.now() - clearArmed > 5000) { clearArmed = Date.now(); $('yClear').textContent = 'לחץ שוב לאישור המחיקה'; setTimeout(() => $('yClear').textContent = 'מחיקת כל ההיסטוריה', 5000); return; }
+  try { await post('api/clear-history', {confirm:'yes'}); msg('yMsg', 'ההיסטוריה נמחקה', true); S.yday = null; } catch (e) { msg('yMsg', 'המחיקה נכשלה'); }
+}
+async function reboot() { try { await post('api/reboot', {}); } catch (e) {} $('hDot').className = 'dot warn'; setTimeout(() => location.reload(), 8000); }
+async function logout() { try { await post('api/logout', {}); } catch (e) {} showLogin(); }
+function uploadFw() {
+  const f = $('uFile').files[0]; if (!f) return msg('uMsg', 'בחר קובץ firmware.bin');
+  const x = new XMLHttpRequest(), fd = new FormData(); fd.append('firmware', f, f.name);
+  x.upload.onprogress = e => $('uBar').style.width = (e.loaded / e.total * 100) + '%';
+  x.onload = () => {
+    if (x.status === 200) { msg('uMsg', 'העדכון הצליח. המכשיר מופעל מחדש...', true); setTimeout(() => location.reload(), 10000); }
+    else { let e = ''; try { e = JSON.parse(x.responseText).error; } catch (_) {} msg('uMsg', 'העדכון נכשל ' + e); }
+  };
+  x.onerror = () => msg('uMsg', 'החיבור נקטע');
+  x.open('POST', 'api/update'); x.setRequestHeader('X-Requested-With', 'fetch'); x.send(fd);
+  msg('uMsg', 'מעלה... אל תנתק את המכשיר', true);
+}
+
+// ------------------------------------------------------------------ wiring
+function seg(id, cb) { $(id).onclick = e => { const b = e.target.closest('button'); if (!b) return; for (const c of $(id).children) c.classList.toggle('on', c === b); cb(b.dataset.v); }; }
+$('nav').onclick = e => { const b = e.target.closest('button'); if (b) tab(b.dataset.tab); };
+seg('liveMode', v => { S.liveMode = v; drawLive(); });
+seg('hRange', v => {
+  H.range = v; $('hCustom').classList.toggle('hide', v !== 'custom');
+  if (v === 'custom' && !$('hFrom').value) { $('hFrom').valueAsDate = new Date(Date.now() - 7 * DAY); $('hTo').valueAsDate = new Date(); }
+  const want = {day:'power', week:'energy', month:'energy', year:'energy', custom:'energy'}[v];
+  H.metric = want; for (const c of $('hMetric').children) c.classList.toggle('on', c.dataset.v === want);
+  loadHistory();
+});
+seg('hMetric', v => { H.metric = v; drawHistory(); });
+$('hPrev').onclick = () => shift(-1);
+$('hNext').onclick = () => shift(1);
+window.addEventListener('resize', () => { if (S.tab === 'now') drawLive(); if (S.tab === 'hist') drawHistory(); if (S.tab === 'cost') loadCosts(); });
+H.metric = 'power'; for (const c of $('hMetric').children) c.classList.toggle('on', c.dataset.v === 'power');
+boot();
+</script>
+</body>
+</html>

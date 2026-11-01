@@ -1,0 +1,7 @@
+.pio/
+.vscode/
+firmware/test/host/test_host
+firmware/test/host/simulate
+firmware/tools/sim-data/
+__pycache__/
+firmware/src/secrets.h
