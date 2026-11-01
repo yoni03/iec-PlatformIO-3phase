@@ -18,16 +18,15 @@
 
 ## 1. החומרה
 
-אין צורך ברכיבים מעבר לרשימה הזו. קישורי רכישה נמצאים בקטע [מה נדרש](https://github.com/mp3llll/iec-p1-esphome-3phase#מה-נדרש) של הפרויקט שעליו מבוסס תכנון החומרה:
-
-| רכיב | פרטים |
+| רכיב | מה לחפש |
 |---|---|
-| ESP32 + לוח מהדקים | ESP32 בעל 30 פינים (ESP32-32D), על לוח מהדקים |
-| כבל RJ12 | 6 גידים (6P6C) עם כל ששת המגעים |
+| ESP32 | לוח פיתוח בעל 30 פינים עם המודול ESP32-WROOM-32D (מסומן `ESP-32D`), 4MB פלאש, חיבור USB-C ושבב USB מסוג CH340 |
+| לוח מהדקים | לוח הרחבה עם מהדקי בורג ל-ESP32 בעל 30 פינים. לא חובה, אבל חוסך הלחמות |
+| כבל RJ12 | 6P6C: שישה מגעים ושישה גידים. כבל טלפון עם 4 גידים (6P4C) או כבל רשת (RJ45) לא מתאימים |
 | 2 נגדים | 1kΩ |
-| קופסה (לא חובה) | קובץ הדפסה ב-[MakerWorld](https://makerworld.com/en/models/3523403-breakout-board-for-esp#profileId-4027704) |
+| קופסה (לא חובה) | קובץ הדפסה בתלת-ממד ב-[MakerWorld](https://makerworld.com/en/models/3523403-breakout-board-for-esp#profileId-4027704) |
 
-בנוסף צריך מולטימטר, וכבל USB שמעביר נתונים (לא רק טעינה) לצריבה הראשונה.
+בנוסף צריך מולטימטר, וכבל USB-C שמעביר נתונים (לא רק טעינה) לצריבה הראשונה.
 
 <p align="center"><img src="images/enclosure.jpg" alt="הקופסה המודפסת עם ה-ESP32" width="280"></p>
 
@@ -37,112 +36,17 @@
 
 ## 2. צריבה ראשונה
 
-בשלב הזה ה-ESP32 מחובר רק למחשב, ב-USB. **לא למונה.**
+**📗 ההוראות המלאות, עם צילומי מסך: [מדריך צריבה](FLASHING.md).**
 
-יש שתי דרכים:
+בקצרה:
 
-| | דרך א׳: מהדפדפן | דרך ב׳: PlatformIO |
+| | דרך א׳: מהדפדפן | דרך ב׳: PlatformIO ב-VS Code |
 |---|---|---|
-| התקנות | אין | PlatformIO |
-| רשת הבית | נבחרת אחרי הצריבה, דרך הרשת `HElectricity` | אפשר לקבוע מראש, לפני הצריבה |
-| מתאים ל- | צריבה מהירה של הגרסה המוכנה | קביעת הרשת מראש, ובנייה אחרי שינויים בקוד |
+| מה מתקינים | כלום | VS Code והתוסף PlatformIO |
+| רשת הבית | נבחרת אחרי הצריבה, דרך הרשת `HElectricity` | אפשר לקבוע מראש בקובץ `secrets.h` |
+| מתאים ל- | צריבה ראשונה של הגרסה המוכנה | קביעת הרשת מראש, ובנייה אחרי שינויים בקוד |
 
-### דרך א׳: צריבה מהדפדפן, בלי התקנות
-
-1. פתח ב-Chrome או ב-Edge את [ESP Tool של Espressif](https://espressif.github.io/esptool-js/).
-2. חבר את ה-ESP32 למחשב ב-USB.
-3. בקטע **Program**, לחץ **Connect** ובחר את היציאה של הלוח. ב-Mac היא נקראת בדרך כלל `cu.usbserial-…` או `cu.SLAB_USBtoUART`.
-4. לחץ **Erase Flash** וחכה לסיום. זה מוחק את מה שהיה על הלוח קודם.
-5. ב-**Flash Address** השאר `0x0`, ובחר את הקובץ [`release/electricity-meter-full.bin`](../release/electricity-meter-full.bin).
-6. לחץ **Program** וחכה שהצריבה תסתיים.
-7. לחץ על כפתור **EN** או **RST** בלוח, או נתק וחבר את ה-USB.
-
-אם החיבור נתקע ב-`Connecting...`, החזק את כפתור **BOOT** בלוח עד שהצריבה מתחילה.
-
-### דרך ב׳: בנייה וצריבה עם PlatformIO
-
-**התקנה, פעם אחת (Mac):**
-
-```bash
-xcode-select --install        # כלי הפיתוח של Apple, אם עוד לא מותקנים
-brew install platformio
-```
-
-אפשר גם להשתמש ב-VS Code עם התוסף **PlatformIO IDE**, ולפתוח בו את התיקייה `firmware`.
-
-#### קביעת רשת הבית מראש (לא חובה)
-
-כך המכשיר מתחבר לרשת הבית כבר בהפעלה הראשונה, בלי לעבור דרך הרשת `HElectricity`.
-
-1. העתק את הקובץ `firmware/src/secrets.example.h` לקובץ חדש באותה תיקייה, בשם `secrets.h`:
-
-   ```bash
-   cd firmware
-   cp src/secrets.example.h src/secrets.h
-   ```
-
-2. פתח את `src/secrets.h` ומלא את שם הרשת והסיסמה שלה:
-
-   ```c
-   #define PRESET_WIFI_SSID "שם-הרשת-שלך"
-   #define PRESET_WIFI_PASSWORD "הסיסמה-של-הרשת"
-   ```
-
-3. מומלץ לקבוע באותו קובץ גם את פרטי הכניסה לממשק. מוחקים את `//` בתחילת השורות וממלאים:
-
-   ```c
-   #define PRESET_ADMIN_USER "admin"
-   #define PRESET_ADMIN_PASSWORD "סיסמה-של-8-תווים-לפחות"
-   ```
-
-   אם לא תקבע אותם, הכניסה הראשונה לממשק תבקש ליצור משתמש וסיסמה.
-
-4. ממשיכים לבנייה ולצריבה כרגיל.
-
-**כדאי לדעת:**
-
-* `secrets.h` ברשימת ההתעלמות של git, ולכן לא יעלה ל-GitHub. לעומת זאת, הפרטים נמצאים בתוך קובץ הקושחה שנבנה. אל תשתף את ה-`firmware.bin` שבנית.
-* הערכים בקובץ משמשים רק כשאין למכשיר הגדרות משלו: בהפעלה הראשונה, ושוב אחרי איפוס עם כפתור BOOT. שינויים שתעשה אחר כך בממשק גוברים עליהם.
-* אם הסיסמה לממשק קצרה מ-8 תווים, הבנייה תיכשל עם הודעה ברורה.
-* אם שם הרשת או הסיסמה שגויים, אחרי 3 דקות תיפתח הרשת `HElectricity`, ואפשר לתקן דרכה.
-
-#### בנייה וצריבה
-
-```bash
-cd firmware
-pio run                  # בנייה. בפעם הראשונה מוריד את הכלים, וזה לוקח כמה דקות
-pio run -t upload        # צריבה ב-USB
-pio device monitor       # הצגת הלוג של המכשיר. יציאה: Ctrl+C
-```
-
-הממשק שבקובץ `web/index.html` נדחס ומוטמע בקושחה אוטומטית בכל בנייה.
-
-### מה אמור להופיע בלוג
-
-אם פתחת את `pio device monitor`, או את **Serial Monitor** ב-ESP Tool במהירות 115200, אחרי הפעלה מחדש תראה בערך:
-
-**בלי הגדרה מראש:**
-
-```
-Electricity meter 1.0.0
-[fs] … / 1441792 bytes used
-[wifi] not configured: starting the setup access point
-[wifi] access point 'HElectricity' on, http://192.168.4.1
-[web] server on port 80
-```
-
-**עם `secrets.h`:**
-
-```
-Electricity meter 1.0.0
-[preset] home Wi-Fi from secrets.h: 'שם-הרשת-שלך'
-[preset] web login from secrets.h: user 'admin'
-[wifi] connecting to 'שם-הרשת-שלך'
-[web] server on port 80
-[wifi] connected, IP 192.168.1.57, RSSI -58
-```
-
-בהפעלה הראשונה ה-ESP32 מאתחל את אזור האחסון, וזה יכול לקחת כמה שניות.
+בזמן הצריבה הלוח מחובר **רק למחשב**, בכבל USB. **לא למונה.** בסוף הצריבה הלוח עולה, ומופיעה רשת Wi-Fi בשם `HElectricity`. אם קבעת את רשת הבית מראש, הוא מתחבר אליה ישירות.
 
 ---
 
@@ -150,7 +54,7 @@ Electricity meter 1.0.0
 
 ### אם קבעת את רשת הבית מראש
 
-1. גלוש אל **`http://electricity-meter.local`**, או לכתובת ה-IP שמופיעה בלוג.
+1. גלוש אל **`http://electricity-meter.local`**, או לכתובת ה-IP שמופיעה בלוג ([מדריך צריבה, סעיף 4](FLASHING.md#4-איך-יודעים-שהצריבה-הצליחה)).
 2. אם קבעת גם שם משתמש וסיסמה, היכנס איתם.
 3. אם לא, יופיע מסך שמבקש ליצור שם משתמש וסיסמה. מיד אחר כך יופיע מסך הכניסה.
 
@@ -204,8 +108,6 @@ Electricity meter 1.0.0
 ---
 
 ## 5. בניית החומרה
-
-החיווט זהה לפרויקט המקורי.
 
 <table>
   <tr>
@@ -348,7 +250,7 @@ python3 firmware/tools/mock_server.py 8081 --setup   # מסך ההגדרה הר�
 
 עורכים את `firmware/web/index.html` ומרעננים את הדפדפן. בבנייה הבאה ב-PlatformIO הממשק המעודכן נכנס לקושחה.
 
-**הקוד ב-GitHub:** [yoni03/iec-PlatformIO-3phase](https://github.com/yoni03/iec-PlatformIO-3phase), fork של הפרויקט המקורי. הגרסה העצמאית נמצאת בענף `main`.
+**הקוד ב-GitHub:** [yoni03/iec-PlatformIO-3phase](https://github.com/yoni03/iec-PlatformIO-3phase).
 
 ```bash
 git clone https://github.com/yoni03/iec-PlatformIO-3phase.git
