@@ -116,7 +116,7 @@ sudo apt remove brltty
    </details>
 
 2. הורד את הקוד: בדף [הריפו](https://github.com/yoni03/iec-PlatformIO-3phase) לחץ **Code > Download ZIP** וחלץ את הקובץ. אפשר גם `git clone`.
-3. ב-VS Code: **File > Open Folder**, ובחר את התיקייה **`firmware`** שבתוך הפרויקט. לא את התיקייה הראשית: PlatformIO מזהה את הפרויקט לפי הקובץ `platformio.ini`, שנמצא ב-`firmware`.
+3. ב-VS Code: **File > Open Folder** (או **Pick a folder** בחלון של PlatformIO), ובחר את התיקייה **`firmware`** שבתוך הפרויקט. לא את התיקייה הראשית: PlatformIO מזהה את הפרויקט לפי הקובץ `platformio.ini`, שנמצא ב-`firmware`. אחרי הפתיחה, בראש החלון יופיע `firmware`, ובשורת המצב למטה יופיעו כפתורי PlatformIO.
 4. **לא חובה, קביעת רשת הבית מראש:** העתק את `src/secrets.example.h` לקובץ חדש בשם `src/secrets.h`, ומלא בו את שם הרשת והסיסמה. אפשר למלא גם שם משתמש וסיסמה לממשק. ההוראות כתובות בתוך הקובץ. הקובץ לא עולה ל-GitHub, אבל הפרטים נכנסים לקושחה שנבנית, ולכן אל תשתף אותה.
 5. לחץ **Upload** (→) בשורת המצב בתחתית החלון. בפעם הראשונה PlatformIO מוריד כלים, וזה לוקח כמה דקות. בסוף יופיע `[SUCCESS]`.
 6. לחץ **Serial Monitor** (🔌) ואז **EN** בלוח, כדי לראות את הלוג. סגור את חלון הלוג לפני צריבה נוספת.
