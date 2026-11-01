@@ -1,27 +1,26 @@
-// Home Wi-Fi and login, set before flashing (optional).
+// רשת הבית ופרטי הכניסה, נקבעים לפני הצריבה (לא חובה).
 //
-// 1. Copy this file to secrets.h (same folder).
-// 2. Fill in your values.
-// 3. Build and flash with PlatformIO.
+// 1. העתק את הקובץ הזה לקובץ בשם secrets.h, באותה תיקייה.
+// 2. מלא את הערכים שלך.
+// 3. בנה וצרוב עם PlatformIO.
 //
-// The device then joins your home network on the first boot, without the
-// HElectricity setup network. secrets.h is listed in .gitignore and is never
-// pushed to GitHub. Do not share the firmware.bin you build from it: the values
-// below are inside it.
+// המכשיר יתחבר לרשת הבית כבר בהפעלה הראשונה, בלי לעבור דרך הרשת HElectricity.
+// secrets.h ברשימת ההתעלמות של git (‎.gitignore) ולא יעלה ל-GitHub.
+// אל תשתף את קובץ ה-firmware.bin שתבנה ממנו: הערכים שכאן נמצאים בתוכו.
 //
-// The values are used only while the device has no settings of its own: on
-// the first boot, and again after a reset with the BOOT button (10 s).
-// Changes made later in the web UI take precedence.
+// הערכים משמשים רק כשאין למכשיר הגדרות משלו: בהפעלה הראשונה, ושוב אחרי
+// איפוס עם כפתור BOOT (לחיצה של 10 שניות). שינויים מהממשק גוברים עליהם.
 #pragma once
 
-// Home network (2.4 GHz only)
+// רשת הבית (2.4GHz בלבד)
 #define PRESET_WIFI_SSID "MyHomeWiFi"
 #define PRESET_WIFI_PASSWORD "my-wifi-password"
 
-// Optional: name on the network -> http://<name>.local (English letters, digits, '-')
+// לא חובה: שם המכשיר ברשת, לכתובת http://<השם>.local
+// אותיות באנגלית, ספרות ומקף בלבד
 // #define PRESET_HOSTNAME "electricity-meter"
 
-// Optional: login for the web UI (password: at least 8 characters).
-// Without these, the first visit to the web UI asks you to create a user.
+// לא חובה: שם משתמש וסיסמה לממשק (סיסמה של 8 תווים לפחות).
+// בלעדיהם, הכניסה הראשונה לממשק תבקש ליצור משתמש.
 // #define PRESET_ADMIN_USER "admin"
 // #define PRESET_ADMIN_PASSWORD "choose-a-password"
